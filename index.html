@@ -1,0 +1,63 @@
+<!doctype html>
+<html>
+  <head>
+    <script src = "/socket.io/socket.io.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body { font: 13px Helvetica, Arial; }
+      form { background: #000; padding: 3px; position: fixed; bottom: 0; width: 100%; }
+      form input { border: 0; padding: 10px; width: 90%; margin-right: .5%; }
+      form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 10px; }
+      #messages { list-style-type: none; margin: 0; padding: 0; }
+      #messages li { padding: 5px 10px; }
+      #messages li:nth-child(odd) { background: #eee; }
+    </style>
+  </head>
+
+  <body>
+    <ul id = "messages">
+    </ul>
+    <form id = "newChat">
+      <input id="m" autocomplete="off" /><button>Send</button>
+    </form>
+    <script>
+      var socket = io.connect('http://localhost');
+      var who;
+
+      socket.on('connect', function() {
+        var chatter = prompt('Please enter you name');
+        chatter = (chatter === "" || chatter === null) ? "anon" : chatter;
+        addChatter("you", "Joined");
+        who = chatter;
+        socket.emit('joined', { name: chatter});
+      });
+
+      function addChatter(name, message) {
+        var chat = document.getElementById("messages");
+        chat.innerHTML += "<li>" + name + " -> " + message + "</li>";
+      }
+
+      socket.on('joined', function(data) {
+        console.log(data);
+        addChatter(data.name, ' joined');
+      });
+
+      socket.on('disconnected', function(data) {
+        addChatter(data.name, 'disconnected');
+      });
+
+      socket.on('message', function(data) {
+        addChatter(data.name, data.message);
+      });
+
+      var chat = document.getElementById("newChat");
+      chat.onsubmit = function() {
+        var msg = document.getElementById("m").value;
+        socket.emit('message', { name: who, message: msg });
+        document.getElementById("m").value = "";
+        addChatter(who, msg);
+        return false;
+      }
+    </script>
+  </body>
+</html>
